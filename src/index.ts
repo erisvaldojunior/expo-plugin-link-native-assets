@@ -11,10 +11,7 @@ const debug = require("debug")("bacons:link-assets");
 
 import { groupFilesByType } from "./groupFiles";
 
-type Props = {
-  font?: string[];
-  image?: string[];
-};
+type Props = Record<string, string[]>;
 
 const withLinkedAsset: ConfigPlugin<string[]> = (config, props) => {
   const expanded = props
@@ -37,27 +34,39 @@ const withLinkedAsset: ConfigPlugin<string[]> = (config, props) => {
   return config;
 };
 
-const withAndroidLinkedAsset: ConfigPlugin<Props> = (config, { font }) => {
+const withAndroidLinkedAsset: ConfigPlugin<Props> = (
+  config,
+  { font = [], ...raw }
+) => {
   withDangerousMod(config, [
     "android",
     (config) => {
-      (font || []).forEach((asset) => {
-        const fontsDir = path.join(
-          config.modRequest.platformProjectRoot,
-          "app/src/main/assets/fonts"
-        );
-        fs.mkdirSync(fontsDir, { recursive: true });
-        const output = path.join(fontsDir, path.basename(asset));
-        debug("Copying font:", asset, "to", output);
-        fs.copyFileSync(asset, output);
-      });
+      function addResourceFiles(assets: string[], directoryName: string) {
+        return assets.forEach((asset) => {
+          const dir = path.join(
+            config.modRequest.platformProjectRoot,
+            `app/src/main/res/${directoryName}`
+          );
+          fs.mkdirSync(dir, { recursive: true });
+          const output = path.join(dir, path.basename(asset));
+          debug("Copying asset:", asset, "to", output);
+          fs.copyFileSync(asset, output);
+        });
+      }
+
+      addResourceFiles(font, "font");
+      addResourceFiles(Object.values(raw).flat(), "raw");
+
       return config;
     },
   ]);
   return config;
 };
 
-const withIosLinkedAsset: ConfigPlugin<Props> = (config, { font, image }) => {
+const withIosLinkedAsset: ConfigPlugin<Props> = (
+  config,
+  { font = [], image = [], ...rest }
+) => {
   config = withXcodeProject(config, (config) => {
     const project = config.modResults;
 
@@ -85,6 +94,7 @@ const withIosLinkedAsset: ConfigPlugin<Props> = (config, { font, image }) => {
 
     addResourceFile(font);
     addResourceFile(image);
+    addResourceFile(Object.values(rest).flat());
 
     return config;
   });
