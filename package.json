@@ -1,6 +1,6 @@
 {
-  "name": "@bacons/link-assets",
-  "version": "1.1.0",
+  "name": "@erisvaldo.junior/expo-plugin-link-native-assets",
+  "version": "1.0.0",
   "description": "An Expo Config Plugin that links native assets to the native projects",
   "main": "build",
   "files": [
